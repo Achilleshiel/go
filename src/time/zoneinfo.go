@@ -351,10 +351,6 @@ func tzset(s string, lastTxSec, sec int64) (name string, offset int, start, end 
 		startRule, endRule = endRule, startRule
 	}
 
-	// The start and end values that we return are accurate
-	// close to a daylight savings transition, but are otherwise
-	// just the start and end of the year. That suffices for
-	// the only caller that cares, which is Date.
 	if ysec < startSec {
 		endSec = int64(tzruleTime(year-1, endRule, dstOffset))
 		if isLeap(year - 1) {
