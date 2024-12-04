@@ -265,18 +265,23 @@ func TestTzset(t *testing.T) {
 	}{
 		{"", 0, 0, "", 0, 0, 0, false, false},
 		{"PST8PDT,M3.2.0,M11.1.0", 0, 2159200800, "PDT", -7 * 60 * 60, 2152173600, 2172733200, true, true},
-		{"PST8PDT,M3.2.0,M11.1.0", 0, 2152173599, "PST", -8 * 60 * 60, 2145916800, 2152173600, false, true},
+		{"PST8PDT,M3.2.0,M11.1.0", 0, 2152173599, "PST", -8 * 60 * 60, 2140678800, 2152173600, false, true},
 		{"PST8PDT,M3.2.0,M11.1.0", 0, 2152173600, "PDT", -7 * 60 * 60, 2152173600, 2172733200, true, true},
 		{"PST8PDT,M3.2.0,M11.1.0", 0, 2152173601, "PDT", -7 * 60 * 60, 2152173600, 2172733200, true, true},
 		{"PST8PDT,M3.2.0,M11.1.0", 0, 2172733199, "PDT", -7 * 60 * 60, 2152173600, 2172733200, true, true},
-		{"PST8PDT,M3.2.0,M11.1.0", 0, 2172733200, "PST", -8 * 60 * 60, 2172733200, 2177452800, false, true},
-		{"PST8PDT,M3.2.0,M11.1.0", 0, 2172733201, "PST", -8 * 60 * 60, 2172733200, 2177452800, false, true},
+		{"PST8PDT,M3.2.0,M11.1.0", 0, 2172733200, "PST", -8 * 60 * 60, 2172733200, 2183623200, false, true},
+		{"PST8PDT,M3.2.0,M11.1.0", 0, 2172733201, "PST", -8 * 60 * 60, 2172733200, 2183623200, false, true},
 		{"KST-9", 592333200, 1677246697, "KST", 9 * 60 * 60, 592333200, 1<<63 - 1, false, true},
+		{"<+1245>-12:45<+1345>,M9.5.0/2:45,M4.1.0/3:45", 0, 2159200800, "+1245", (12*60 + 45) * 60, 2153916000, 2169036000, false, true},
+		{"<+1245>-12:45<+1345>,M9.5.0/2:45,M4.1.0/3:45", 0, 2159200800, "+1245", (12*60 + 45) * 60, 2153916000, 2169036000, false, true},
+		{"<+00>0<+02>-2,M3.5.0/1,M10.5.0/3", 0, 2159200800, "+02", 2 * 60 * 60, 2153350800, 2172099600, true, true},
 	} {
-		name, off, start, end, isDST, ok := time.Tzset(test.inStr, test.inEnd, test.inSec)
-		if name != test.name || off != test.off || start != test.start || end != test.end || isDST != test.isDST || ok != test.ok {
-			t.Errorf("tzset(%q, %d, %d) = %q, %d, %d, %d, %t, %t, want %q, %d, %d, %d, %t, %t", test.inStr, test.inEnd, test.inSec, name, off, start, end, isDST, ok, test.name, test.off, test.start, test.end, test.isDST, test.ok)
-		}
+		t.Run(test.inStr, func(t *testing.T) {
+			name, off, start, end, isDST, ok := time.Tzset(test.inStr, test.inEnd, test.inSec)
+			if name != test.name || off != test.off || start != test.start || end != test.end || isDST != test.isDST || ok != test.ok {
+				t.Errorf("tzset(%q, %d, %d) = %q, %d, %d, %d, %t, %t, want %q, %d, %d, %d, %t, %t", test.inStr, test.inEnd, test.inSec, name, off, start, end, isDST, ok, test.name, test.off, test.start, test.end, test.isDST, test.ok)
+			}
+		})
 	}
 }
 

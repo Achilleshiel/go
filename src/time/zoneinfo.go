@@ -333,7 +333,8 @@ func tzset(s string, lastTxSec, sec int64) (name string, offset int, start, end 
 
 	// Compute start of year in seconds since Unix epoch,
 	// and seconds since then to get to sec.
-	year, yday := absSeconds(sec + unixToInternal + internalToAbsolute).days().yearYday()
+	absSec := sec + unixToInternal + internalToAbsolute
+	year, yday := absSeconds(absSec).days().yearYday()
 	ysec := int64((yday-1)*secondsPerDay) + sec%secondsPerDay
 	ystart := sec - ysec
 
@@ -348,6 +349,7 @@ func tzset(s string, lastTxSec, sec int64) (name string, offset int, start, end 
 		stdName, dstName = dstName, stdName
 		stdOffset, dstOffset = dstOffset, stdOffset
 		stdIsDST, dstIsDST = dstIsDST, stdIsDST
+		startRule, endRule = endRule, startRule
 	}
 
 	// The start and end values that we return are accurate
@@ -355,9 +357,19 @@ func tzset(s string, lastTxSec, sec int64) (name string, offset int, start, end 
 	// just the start and end of the year. That suffices for
 	// the only caller that cares, which is Date.
 	if ysec < startSec {
-		return stdName, stdOffset, ystart, startSec + ystart, stdIsDST, true
+		endSec = int64(tzruleTime(year-1, endRule, dstOffset))
+		if isLeap(year - 1) {
+			startSec += secondsPerDay
+		}
+
+		return stdName, stdOffset, ystart - 365*secondsPerDay + endSec, startSec + ystart, stdIsDST, true
 	} else if ysec >= endSec {
-		return stdName, stdOffset, endSec + ystart, ystart + 365*secondsPerDay, stdIsDST, true
+		startSec = int64(tzruleTime(year+1, startRule, stdOffset))
+		if isLeap(year) {
+			startSec += secondsPerDay
+		}
+
+		return stdName, stdOffset, endSec + ystart, ystart + 365*secondsPerDay + startSec, stdIsDST, true
 	} else {
 		return dstName, dstOffset, startSec + ystart, endSec + ystart, dstIsDST, true
 	}
