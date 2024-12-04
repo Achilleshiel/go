@@ -276,12 +276,10 @@ func TestTzset(t *testing.T) {
 		{"<+1245>-12:45<+1345>,M9.5.0/2:45,M4.1.0/3:45", 0, 2159200800, "+1245", (12*60 + 45) * 60, 2153916000, 2169036000, false, true},
 		{"<+00>0<+02>-2,M3.5.0/1,M10.5.0/3", 0, 2159200800, "+02", 2 * 60 * 60, 2153350800, 2172099600, true, true},
 	} {
-		t.Run(test.inStr, func(t *testing.T) {
-			name, off, start, end, isDST, ok := time.Tzset(test.inStr, test.inEnd, test.inSec)
-			if name != test.name || off != test.off || start != test.start || end != test.end || isDST != test.isDST || ok != test.ok {
-				t.Errorf("tzset(%q, %d, %d) = %q, %d, %d, %d, %t, %t, want %q, %d, %d, %d, %t, %t", test.inStr, test.inEnd, test.inSec, name, off, start, end, isDST, ok, test.name, test.off, test.start, test.end, test.isDST, test.ok)
-			}
-		})
+		name, off, start, end, isDST, ok := time.Tzset(test.inStr, test.inEnd, test.inSec)
+		if name != test.name || off != test.off || start != test.start || end != test.end || isDST != test.isDST || ok != test.ok {
+			t.Errorf("tzset(%q, %d, %d) = %q, %d, %d, %d, %t, %t, want %q, %d, %d, %d, %t, %t", test.inStr, test.inEnd, test.inSec, name, off, start, end, isDST, ok, test.name, test.off, test.start, test.end, test.isDST, test.ok)
+		}
 	}
 }
 
