@@ -12,6 +12,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -276,12 +278,63 @@ func TestTzset(t *testing.T) {
 		{"<+1245>-12:45<+1345>,M9.5.0/2:45,M4.1.0/3:45", 0, 2153915999, "+1345", (13*60 + 45) * 60, 2137586400, 2153916000, true, true},
 		{"<+00>0<+02>-2,M3.5.0/1,M10.5.0/3", 0, 2159200800, "+02", 2 * 60 * 60, 2153350800, 2172099600, true, true},
 		{"<+00>0<+02>-2,M3.5.0/1,M10.5.0/3", 0, 2153350799, "+00", 0, 2140045200, 2153350800, false, true},
+		{"CET-1CEST,M3.5.0/2,M10.5.0/3", 0, 1719784800, "CEST", 2 * 60 * 60, 1711846800, 1729990800, true, true},
+		{"CET-1CEST,M3.5.0/2,M10.5.0/3", 0, 2240611200, "CET", 1 * 60 * 60, 2234998800, 2248304400, false, true},
+		//TODO: create transitions for 8 years
 	} {
 		name, off, start, end, isDST, ok := time.Tzset(test.inStr, test.inEnd, test.inSec)
 		if name != test.name || off != test.off || start != test.start || end != test.end || isDST != test.isDST || ok != test.ok {
 			t.Errorf("tzset(%q, %d, %d) = %q, %d, %d, %d, %t, %t, want %q, %d, %d, %d, %t, %t", test.inStr, test.inEnd, test.inSec, name, off, start, end, isDST, ok, test.name, test.off, test.start, test.end, test.isDST, test.ok)
 		}
 	}
+}
+
+func TestTzset2(t *testing.T) {
+	for _, test := range []struct {
+		iana string
+	}{
+		{
+			iana: "Europe/Brussels",
+		},
+		{
+			iana: "America/Nuuk",
+		},
+		{
+			iana: "Asia/Jerusalem",
+		},
+	} {
+		t.Run(test.iana, func(t *testing.T) {
+			date := time.Now()
+			for range 10000 {
+				date = date.AddDate(0, 0, 1)
+
+				location, err := time.LoadLocation(test.iana)
+				if err != nil {
+					t.Fatalf("parsing location: %s", err)
+				}
+				in := date.In(location)
+				name, offset := in.Zone()
+
+				start, end := in.ZoneBounds()
+				startS, endS := start.Unix(), end.Unix()
+				isDST := in.IsDST()
+				posix := reflect.ValueOf(location).Elem().FieldByName("extend").String()
+
+				gotname, gotoff, gotstart, gotend, gotisDST, gotok := time.Tzset(posix, 0, date.Unix())
+
+				if name != gotname || offset != gotoff || startS != gotstart || endS != gotend || isDST != gotisDST || !gotok {
+					require.Equal(t, name, gotname)
+					require.Equal(t, gotoff, offset)
+					require.WithinDuration(t, start, time.Unix(gotstart, 0), 0)
+					require.WithinDurationf(t, end, time.Unix(gotend, 0), 0, "%s", date)
+					require.Equal(t, gotisDST, isDST)
+					require.True(t, gotok)
+					t.Errorf("tzset(%q, %d, %d) = %q, %d, %d, %d, %t, %t, want %q, %d, %d, %d, %t, %t", posix, 0, date.Unix(), gotname, gotoff, gotstart, gotend, gotisDST, gotok, name, offset, startS, endS, isDST, true)
+				}
+			}
+		})
+	}
+
 }
 
 func TestTzsetName(t *testing.T) {

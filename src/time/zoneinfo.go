@@ -354,7 +354,8 @@ func tzset(s string, lastTxSec, sec int64) (name string, offset int, start, end 
 	if ysec < startSec {
 		endSec = int64(tzruleTime(year-1, endRule, dstOffset))
 		if isLeap(year - 1) {
-			startSec += secondsPerDay
+			endSec -= secondsPerDay
+			//startSec += secondsPerDay
 		}
 
 		return stdName, stdOffset, ystart - 365*secondsPerDay + endSec, startSec + ystart, stdIsDST, true
